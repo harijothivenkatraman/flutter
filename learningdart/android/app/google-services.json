@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1022449077125",
+    "project_id": "calculator-7d98b",
+    "storage_bucket": "calculator-7d98b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022449077125:android:fd7c6490ed412316fa92ec",
+        "android_client_info": {
+          "package_name": "com.example.learningdart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxbfsAdNAacFz70iXUUsTFsuwjPbE9y74"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
