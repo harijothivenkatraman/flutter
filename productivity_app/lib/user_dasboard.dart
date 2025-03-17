@@ -5,6 +5,7 @@ import 'reminder.dart';
 import 'fitness_tracker.dart';
 import 'bmi_suggestions.dart';
 import 'smart_quiz.dart';
+import 'notes_page.dart';
 
 class UserDashboard extends StatefulWidget {
   @override
@@ -23,7 +24,7 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Dashboard'),
+        title: Text('Self Craft'),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -58,6 +59,11 @@ class _UserDashboardState extends State<UserDashboard> {
             icon: Icons.quiz,
             title: 'Smart Quiz',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SmartQuiz())),
+          ),
+          DashboardItem(
+            icon: Icons.event_note_sharp,
+            title: 'Notes',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => NotesPage())),
           ),
         ],
       ),
