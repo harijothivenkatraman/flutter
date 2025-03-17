@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  final String apiKey = "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"; // Replace with actual API key
+  final String apiKey = "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"; // Replace with actual API key
   final String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
 
   Future<List<Map<String, dynamic>>> fetchQuizQuestions(String subject, String difficulty) async {
