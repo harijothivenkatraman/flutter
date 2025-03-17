@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:productivity_app/services/openai_service.dart';
+import 'services/openai_service.dart';
+
 
 class SmartQuiz extends StatefulWidget {
+  const SmartQuiz({super.key});
+
   @override
   _SmartQuizState createState() => _SmartQuizState();
 }
@@ -13,18 +17,14 @@ class _SmartQuizState extends State<SmartQuiz> {
   int score = 0;
   bool isLoading = false;
   bool isQuizStarted = false;
+  bool isAnswering = false;
+  int timeRemaining = 30;
+  Timer? timer;
 
-  // Default selections
   String selectedSubject = "Science";
   String selectedDifficulty = "Easy";
 
-  List<String> subjects = [
-    "Science",
-    "Math",
-    "History",
-    "Geography",
-    "Technology"
-  ];
+  List<String> subjects = ["Science", "Math", "History", "Geography", "Technology"];
   List<String> difficulties = ["Easy", "Medium", "Hard"];
 
   void startQuiz() async {
@@ -33,8 +33,32 @@ class _SmartQuizState extends State<SmartQuiz> {
       isQuizStarted = true;
     });
 
-    List<Map<String, dynamic>> fetchedQuestions = await apiService
-        .fetchQuizQuestions(selectedSubject, selectedDifficulty);
+    List<Map<String, dynamic>> fetchedQuestions =
+    await apiService.fetchQuizQuestions(selectedSubject, selectedDifficulty);
+
+    if (fetchedQuestions.isEmpty) {
+      setState(() {
+        isLoading = false;
+        isQuizStarted = false;
+      });
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Error"),
+          content: Text("Failed to fetch questions. Please check your API key and try again."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     setState(() {
       questions = fetchedQuestions;
@@ -42,23 +66,36 @@ class _SmartQuizState extends State<SmartQuiz> {
       score = 0;
       isLoading = false;
     });
+
+    startTimer();
   }
 
   void checkAnswer(String selectedAnswer) {
+    if (isAnswering) return;
+
+    setState(() {
+      isAnswering = true;
+    });
+
     String correctAnswer = questions[currentQuestionIndex]["correctAnswer"];
 
-    if (selectedAnswer.trim().toLowerCase() ==
-        correctAnswer.trim().toLowerCase()) {
+    if (selectedAnswer.trim().toLowerCase() == correctAnswer.trim().toLowerCase()) {
       score++;
     }
 
-    if (currentQuestionIndex < questions.length - 1) {
+    resetTimer();
+
+    Future.delayed(Duration(milliseconds: 500), () {
       setState(() {
-        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length - 1) {
+          currentQuestionIndex++;
+          startTimer();
+        } else {
+          showFinalScore();
+        }
+        isAnswering = false;
       });
-    } else {
-      showFinalScore();
-    }
+    });
   }
 
   void showFinalScore() {
@@ -92,10 +129,48 @@ class _SmartQuizState extends State<SmartQuiz> {
     );
   }
 
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+        } else {
+          timer.cancel();
+          checkAnswer("");
+        }
+      });
+    });
+  }
+
+  void resetTimer() {
+    timer?.cancel();
+    timeRemaining = 30;
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Smart Quiz")),
+      appBar: AppBar(
+        title: Text("Smart Quiz"),
+        actions: [
+          if (isQuizStarted)
+            IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: () {
+                setState(() {
+                  isQuizStarted = false;
+                  questions = [];
+                });
+              },
+            ),
+        ],
+      ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : !isQuizStarted
@@ -139,6 +214,8 @@ class _SmartQuizState extends State<SmartQuiz> {
           ],
         ),
       )
+          : questions.isEmpty
+          ? Center(child: Text("No questions available."))
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -146,8 +223,12 @@ class _SmartQuizState extends State<SmartQuiz> {
           children: [
             Text(
               "Question ${currentQuestionIndex + 1}/${questions.length}",
-              style:
-              TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              "Time Remaining: $timeRemaining seconds",
+              style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 10),
             Text(
@@ -156,13 +237,12 @@ class _SmartQuizState extends State<SmartQuiz> {
             ),
             SizedBox(height: 20),
             Column(
-              children:
-              questions[currentQuestionIndex]["options"].map<Widget>((option) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: ElevatedButton(
-                    onPressed: () => checkAnswer(option),
-                    child: Text(option),
+              children: questions[currentQuestionIndex]["options"].map<Widget>((option) {
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 4.0),
+                  child: ListTile(
+                    title: Text(option),
+                    onTap: () => checkAnswer(option),
                   ),
                 );
               }).toList(),

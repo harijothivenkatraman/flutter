@@ -2,10 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  final String apiKey = "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"; // Replace with actual API key
+  final String apiKey = "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"; // Replace with actual API key
   final String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
 
   Future<List<Map<String, dynamic>>> fetchQuizQuestions(String subject, String difficulty) async {
+    if (apiKey.isEmpty || apiUrl.isEmpty) {
+      throw Exception("API key or URL is missing");
+    }
+
     final Map<String, dynamic> requestData = {
       "model": "openai/gpt-3.5-turbo",
       "messages": [
@@ -15,21 +19,35 @@ class OpenAIService {
     };
 
     try {
+      print("API Key: $apiKey");
+      print("API URL: $apiUrl");
+      print("Request Headers: ${{
+        "Authorization": "Bearer $apiKey",
+        "Content-Type": "application/json",
+      }}");
+      print("Request Body: ${jsonEncode(requestData)}");
+
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
           "Authorization": "Bearer $apiKey",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: jsonEncode(requestData),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        String generatedText = responseData["choices"][0]["message"]["content"];
-        return parseQuestions(generatedText);
+        if (responseData.containsKey("choices") && responseData["choices"].isNotEmpty) {
+          String generatedText = responseData["choices"][0]["message"]["content"];
+          return parseQuestions(generatedText);
+        } else {
+          throw Exception("Invalid response format: No choices found");
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception("Unauthorized: Check your API key");
       } else {
-        throw Exception("Error: ${response.statusCode}");
+        throw Exception("Error: ${response.statusCode}, ${response.body}");
       }
     } catch (e) {
       print("Failed to fetch questions: $e");
@@ -40,21 +58,24 @@ class OpenAIService {
   List<Map<String, dynamic>> parseQuestions(String text) {
     List<String> lines = text.split("\n");
     List<Map<String, dynamic>> parsedQuestions = [];
+    int i = 0;
 
-    for (int i = 0; i < lines.length; i++) {
-      if (lines[i].contains("?")) {  // Detecting question
-        String question = lines[i];
+    while (i < lines.length) {
+      if (lines[i].contains("?")) { // Detecting question
+        String question = lines[i].trim();
         List<String> options = [];
+        String correctAnswer = "";
 
         // Extract the next 4 lines as options
         for (int j = 1; j <= 4; j++) {
-          if (i + j < lines.length) {
+          if (i + j < lines.length && lines[i + j].trim().isNotEmpty) {
             options.add(lines[i + j].trim());
+          } else {
+            options.add("Option $j"); // Fallback if options are missing
           }
         }
 
         // Extract correct answer
-        String correctAnswer = "";
         for (int j = i + 5; j < lines.length; j++) {
           if (lines[j].startsWith("Correct Answer:")) {
             correctAnswer = lines[j].replaceAll("Correct Answer:", "").trim();
@@ -67,6 +88,10 @@ class OpenAIService {
           "options": options,
           "correctAnswer": correctAnswer,
         });
+
+        i += 6; // Move to the next question
+      } else {
+        i++; // Skip non-question lines
       }
     }
 
