@@ -6,6 +6,7 @@ import 'fitness_tracker.dart';
 import 'bmi_suggestions.dart';
 import 'smart_quiz.dart';
 import 'notes_page.dart';
+import 'article_gen.dart';
 
 class UserDashboard extends StatefulWidget {
   @override
@@ -64,6 +65,11 @@ class _UserDashboardState extends State<UserDashboard> {
             icon: Icons.event_note_sharp,
             title: 'Notes',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => NotesPage())),
+          ),
+          DashboardItem(
+            icon: Icons.article_rounded,
+            title: 'Article Generator Using GPT-3.5-turbo',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ArticleGeneratorPage())),
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:productivity_app/user_dasboard.dart';
 import 'login_screen.dart';
+import 'signup_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'todolist.dart';
 import 'alarms_list_page.dart';
@@ -47,7 +48,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginScreen(),
         '/dashboard': (context) => UserDashboard(),
-        '/alarms': (context) => AlarmsListPage(), // Add the new route
+        '/alarms': (context) => AlarmsListPage(),
+        '/signup': (context) => SignUpScreen(),// Add the new route
       },
     );
   }
